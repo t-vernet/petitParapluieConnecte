@@ -1,3 +1,4 @@
+![parapluieweb](https://user-images.githubusercontent.com/2531739/110790608-86d5b580-8271-11eb-825f-43b9e727f48e.gif)
 # petitParapluieConnecte
 
 Ce petit parapluie cocktail est connecté à la météo d'une ville de votre choix. S'il pleut la-bas, le parapluie s'ouvre ! Une manière poétique de téléporter la météo !
