@@ -5,7 +5,7 @@ Ce petit parapluie cocktail est connecté à la météo d'une ville de votre cho
 
 Il dispose d'une interface web permettant de tester le fonctionnement.
 
-Commençons par remercier Julien Levesque (http://www.julienlevesque.net/) et Aurélien Fache(https://twitter.com/mathemagie) qui sont les co-auteurs du projet "Little Umbrella" dont s'inspire ce projet.
+Commençons par remercier Julien Levesque (http://www.julienlevesque.net/) et Aurélien Fache(ici : https://github.com/mathemagie ou là : https://twitter.com/mathemagie) qui sont les co-auteurs du projet "Little Umbrella"(https://github.com/mathemagie/little_umbrella) dont s'inspire ce projet.
 
 Sur Wikidébrouillard : https://www.wikidebrouillard.org/wiki/Petit_parapluie_connect%C3%A9
 
