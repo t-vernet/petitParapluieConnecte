@@ -96,10 +96,11 @@ int ferme = 90;  // angle pour fermer le parapluie
 int ouvre = 170; // angle pour ouvrir le parapluie
 bool pluie = 1;  // enregistre si il pleut ou pas.
 
-String webSite,XML; //déclaration de variables
-int start=0; // variable start
+String webSite,xml; //déclaration de variables
+int start = 0; // variable start
+String town = identifiantVille; // set town to initialy defined city
 
-void buildWebsite(){ // Fonction qui écrit le code html du site web
+void buildWebsite(){ // Fonction qui écrit le code html du site web à partir du fichier html.h
   static const char* html =
   #include "html.h"
   ;
@@ -110,10 +111,10 @@ uint16_t x;
 String data; // variable data qui sert à ?
 
 void buildXML(){
-  XML="<?xml version='1.0'?>";
-  XML+="<response>";
-  XML+=data;
-  XML+="</response>";
+  xml="<?xml version='1.0'?>";
+  xml+="<response>";
+  xml+=data;
+  xml+="</response>";
 }
 
 void handleWebsite(){ // génère le site web
@@ -123,11 +124,12 @@ void handleWebsite(){ // génère le site web
 
 void handleXML(){ // gère le xml (description de l'état du boutton)
   buildXML();
-  server.send(200,"text/xml",XML);
+  server.send(200,"text/xml",xml);
 }
 
 void handle1ESPval(){
   start = server.arg("Start").toFloat();
+  town = server.arg("Town");
 }
 
 int start2=0;
@@ -151,8 +153,9 @@ void loop() {
   dateCourante = millis();
   intervalle = dateCourante - dateDernierChangement; // interval de temps depuis la dernière mise à jour du parapluie
 
-  if (intervalle >= 600000) // Récupère de nouvelles données toutes les 10 minutes
+  if (intervalle >= 600000 || identifiantVille != town) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
     {
+      identifiantVille = town;
       dateDernierChangement = millis();
       prendDonneesMeteo();   // récupère les données météo
       parapluie();           // met à jour le parapluie
@@ -202,7 +205,7 @@ void prendDonneesMeteo() //Fonction qui utilise le client web du D1 mini pour en
     Serial.println("Echec de la connexion"); //message d'erreur si la connexion échoue
     Serial.println();
   }
-
+  resultat = "";
   while (client.connected() && !client.available()) delay(1); // attend les données
   while (client.connected() || client.available()) {          // soit le client est connecté, soit il a des données disponibles
     char c = client.read();  // récupère les données
