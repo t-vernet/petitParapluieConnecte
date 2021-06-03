@@ -131,6 +131,9 @@ void handleXML(){ // gère le xml (description de l'état du boutton)
 
 void handle1ESPval(){
   start = server.arg("Start").toFloat();
+}
+
+void handleTown()){
   town = server.arg("Town");
 }
 
@@ -145,6 +148,7 @@ void setup() {
   server.on("/",handleWebsite);
   server.on("/xml",handleXML);
   server.on("/set1ESPval",handle1ESPval);
+  server.on("/town",handleTown);
 
   server.begin();
   prendDonneesMeteo();

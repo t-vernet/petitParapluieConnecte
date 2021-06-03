@@ -62,7 +62,7 @@ R"rawText(
 
     function RunTownButtonWasClicked() {
       town = document.getElementById("town").value
-      xmlHttp.open("SET", "set1ESPval?Town=" + town, true);
+      xmlHttp.open("SET", "town?Town=" + town, true);
       xmlHttp.send(null);
     }
 
