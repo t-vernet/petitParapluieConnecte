@@ -172,13 +172,13 @@ void loop() {
      parastock = para;      // stock la valeur "para" dans "parastock"
      if (start)
        {
-        para = 100;         // triche sur la valeur "para" pour un test pluie
+        para = 900;         // triche sur la valeur "para" pour un test pluie
         parapluie();        // met à jour le parapluie
         Serial.println("parapluie fermé ");
        }
      if (!start)
        {
-        para = 900;        // triche sur la valeur "para" pour un test pluie
+        para = 100;        // triche sur la valeur "para" pour un test pluie
         parapluie();       // met à jour le parapluie
         Serial.println("parapluie ouvert ");
        }
