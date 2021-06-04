@@ -1,5 +1,5 @@
 
-# petitParapluieConnecte
+# petitParapluieConnecte # [![Build Status](https://travis-ci.com/t-vernet/petitParapluieConnecte.svg?branch=master)](https://travis-ci.com/t-vernet/petitParapluieConnecte)
 
 Ce petit parapluie cocktail est connecté à la météo d'une ville de votre choix. S'il pleut la-bas, le parapluie s'ouvre ! Une manière poétique de téléporter la météo !
 
