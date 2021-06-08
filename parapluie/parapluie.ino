@@ -276,20 +276,22 @@ void loop() {
                 parapluie(); // met à jour le parapluie
         }
 
-        if (!start == webClic) // si l'état du bouton web à changé
+        if (start != webClic) // si l'état du bouton web à changé
         {
                 int parastock = para; // stock la valeur "para" dans "parastock"
-                if (start)
+                if (!start)
                 {
                         para = 900; // triche sur la valeur "para" pour un test pluie
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie fermé ");
+                        delay (200);
                 }
-                if (!start)
+                if (start)
                 {
                         para = 100; // triche sur la valeur "para" pour un test pluie
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie ouvert ");
+                        delay (200);
                 }
                 webClic = start; // met à jour webClic
                 para = parastock; // redonne à para sa valeur initiale
