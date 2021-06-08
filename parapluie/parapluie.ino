@@ -55,7 +55,7 @@
 ******************************************************************************/
 
 ESP8266WebServer server(80);  //déclaration du serveur web sur le port
-String webSite,xml,data,town; //déclaration de variables
+String webSite,xml,data,town,key; //déclaration de variables
 int start = 0; // variable start
 
 void buildWebsite(){ // Fonction qui écrit le code html du site web à partir du fichier html.h
@@ -87,6 +87,10 @@ void handle1ESPval(){
 
 void handleTown(){
         town = server.arg("Town");
+}
+
+void handleAPIKey(){
+        key = server.arg("Key");
 }
 
 /********************************* START-WiFi *********************************
@@ -132,7 +136,7 @@ void connexion() {
 WiFiClient client;
 
 char nomDuServeur[] = "api.openweathermap.org";  // Serveur distant auquel on va se connecter
-String cledAPI = "2af21f70398443e5d724375b4836ddaa";  // clé de l'API du site http://openweathermap.org/
+String cledAPI = "";  // clé de l'API du site http://openweathermap.org/
 // il faudra vous créer un compte et récupérer votre clé d'API, une formalité !
 // Sur le site, vous trouvez les identifiants de toutes les villes du monde.
 String identifiantVille = "3030300";   // indiquez l'identifiant d'une ville (CityID), ici Caen en France
@@ -249,40 +253,45 @@ void setup() {
         server.on("/xml",handleXML);
         server.on("/set1ESPval",handle1ESPval);
         server.on("/town",handleTown);
+        server.on("/apikey",handleAPIKey);
         server.begin();
 
         prendDonneesMeteo();
         parapluie ();
 
         town = identifiantVille;
+        key = cledAPI;
 }
 
 void loop() {
         dateCourante = millis();
         intervalle = dateCourante - dateDernierChangement; // intervalle de temps depuis la dernière mise à jour du parapluie
 
-        if (intervalle >= 600000 || identifiantVille != town) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
+        if (intervalle >= 600000 || identifiantVille != town || cledAPI != key) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
         {
                 identifiantVille = town;
+                cledAPI = key;
                 dateDernierChangement = millis();
                 prendDonneesMeteo(); // récupère les données météo
                 parapluie(); // met à jour le parapluie
         }
 
-        if (!start == webClic) // si l'état du bouton web à changé
+        if (start != webClic) // si l'état du bouton web à changé
         {
                 int parastock = para; // stock la valeur "para" dans "parastock"
-                if (start)
+                if (!start)
                 {
                         para = 900; // triche sur la valeur "para" pour un test pluie
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie fermé ");
+                        delay (200);
                 }
-                if (!start)
+                if (start)
                 {
                         para = 100; // triche sur la valeur "para" pour un test pluie
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie ouvert ");
+                        delay (200);
                 }
                 webClic = start; // met à jour webClic
                 para = parastock; // redonne à para sa valeur initiale
