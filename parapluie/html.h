@@ -66,6 +66,11 @@ R"rawText(
       xmlHttp.send(null);
     }
 
+    function RunAPIButtonWasClicked() {
+      key = document.getElementById("key").value
+      xmlHttp.open("SET", "apikey?Key=" + key, true);
+      xmlHttp.send(null);
+    }
   </script>
   <title>POCL-Parapluie</title>
 </head>
@@ -96,7 +101,7 @@ R"rawText(
             <div class="card-header">Test du parapluie</div>
             <div class="card-body">
               <p class="card-text">Pressez le boutton pour ouvrir/fermer le parapluie.</p>
-              <button type="button" id="buttonTestUmbrella" class="btn btn-lg btn-warning btn-block" onClick="RunTestButtonWasClicked()">
+              <button type="button" id="buttonTestUmbrella" class="btn btn-lg btn-warning btn-block" onClick="RunTestButtonWasClicked();">
                 Test
               </button>
             </div>
@@ -130,9 +135,25 @@ R"rawText(
                   <option value="3021411">Dieppe</option>
                 </datalist>
                 <div class="valid-feedback">Valide.</div>
-                <div class="invalid-feedback">Veuillez sélétionner une ville valide.</div>
-                <button type="button" id="townButton" class="btn btn-lg btn-warning btn-block" onClick="RunTownButtonWasClicked()">OK</button>
+                <div class="invalid-feedback">Veuillez séléctionner une ville valide.</div>
+                <button type="button" id="townButton" class="btn btn-lg btn-warning btn-block" onClick="RunTownButtonWasClicked();">OK</button>
               </form>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card bg-light m-2" style="min-height: 15rem;">
+            <div class="card-header">
+                Parametrage de l'API
+            </div>
+            <div class="card-body">
+                <form class="was-validated">
+                    <label for="key" class="form-label">Clef de l'API</label>
+                    <input type="text" id="key" class="form-control" name="key" placeholder="API Key" required>
+                    <div class="valid-feedback">Valide.</div>
+                    <div class="invalid-feedback">Veuillez séléctionner une clé valide.</div>
+                    <button type="button" id="keyButton" class="btn btn-lg btn-warning btn-block" onClick="RunAPIButtonWasClicked();">OK</button>
+                </form>
             </div>
           </div>
         </div>
