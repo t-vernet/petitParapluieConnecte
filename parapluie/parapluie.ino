@@ -51,6 +51,12 @@
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <WebSocketsServer.h> // https://github.com/Links2004/arduinoWebSockets
 
+// id unique du POCL à paramétrer :
+const char *POCL_ID = "1";
+// nom du POCL
+const char *POCL_NAME = "POCL-Parapluie";
+// mot de pas AP
+const char *AP_PW = "lpdgo2021";
 /***************************** START-WebServer ********************************
 * Début de la gestion du server web par ESP8266WebServer                      *
 ******************************************************************************/
@@ -153,7 +159,13 @@ void connexion() {
         bool res;
         // res = wm.autoConnect(); // auto generated AP name from chipid
         // res = wm.autoConnect("AutoConnectAP"); // anonymous ap
-        res = wm.autoConnect("test","testtest"); // password protected ap
+
+        char * apSSID = new char[strlen(POCL_NAME)+1+strlen(POCL_ID)+1];
+        strcpy(apSSID, POCL_NAME);
+        strcat(apSSID, "-");
+        strcat(apSSID, POCL_ID);
+        strcat(apSSID, "\0");
+        res = wm.autoConnect(apSSID,AP_PW); // password protected ap
 
         if(!res) {
                 Serial.println("Failed to connect");
