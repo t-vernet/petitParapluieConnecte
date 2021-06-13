@@ -66,36 +66,31 @@ void buildWebsite(){ // Fonction qui écrit le code html du site web à partir d
         ;
         webSite = String((const char*) html);
 }
-void buildXML(){
-        xml="<?xml version='1.0'?>";
-        xml+="<response>";
-        xml+=data;
-        xml+="</response>";
-}
 
 void handleWebsite(){ // génère le site web
         buildWebsite(); // écriture du html
         server.send(200,"text/html",webSite); // mise en ligne du site
 }
 
-void handleXML(){ // gère le xml (description de l'état du bouton)
-        buildXML();
-        server.send(200,"text/xml",xml);
-}
-
 void handleTest(){
         test = true;
         testType = server.arg("Test").toFloat();
+        server.send(200,"text/plain","200: OK");
 }
 
 void handleTown(){
         town = server.arg("Town");
+        server.send(200,"text/plain","200: OK");
 }
 
 void handleAPIKey(){
         key = server.arg("Key");
+        server.send(200,"text/plain","200: OK");
 }
 
+void handleNotFound(){
+    server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
+}
 /***************************** START-WebSocket ********************************
 * Début de la gestion du server web par ESP8266WebServer                      *
 ******************************************************************************/
@@ -289,10 +284,10 @@ void setup() {
         delay(100);
 
         server.on("/",handleWebsite);
-        server.on("/xml",handleXML);
         server.on("/test",handleTest);
         server.on("/town",handleTown);
         server.on("/apikey",handleAPIKey);
+        server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
         server.begin();
 
         startWebSocket(); // Start a WebSocket server
