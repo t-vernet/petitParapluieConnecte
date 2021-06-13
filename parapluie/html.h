@@ -16,6 +16,9 @@ R"rawText(
 
     function init() {
         setTimeout(webSocketConnection, Math.min(10000,timeout+=timeout));
+        document.getElementById('testButton').addEventListener('click', RunTestButtonWasClicked);
+        document.getElementById('townButton').addEventListener('click', RunTownButtonWasClicked);
+        document.getElementById('keyButton').addEventListener('click', RunAPIButtonWasClicked);
     }
 
     var xmlHttp = createXmlHttpObject();
@@ -134,7 +137,7 @@ R"rawText(
             <div class="card-header">Test du parapluie</div>
             <div class="card-body">
               <p class="card-text">Pressez le boutton pour ouvrir/fermer le parapluie.</p>
-              <button type="button" id="buttonTestUmbrella" class="btn btn-lg btn-warning btn-block" onClick="RunTestButtonWasClicked();">
+              <button type="button" id="testButton" class="btn btn-lg btn-warning btn-block">
                 Test
               </button>
             </div>
@@ -169,7 +172,7 @@ R"rawText(
                 </datalist>
                 <div class="valid-feedback">Valide.</div>
                 <div class="invalid-feedback">Veuillez séléctionner une ville valide.</div>
-                <button type="button" id="townButton" class="btn btn-lg btn-warning btn-block" onClick="RunTownButtonWasClicked();">OK</button>
+                <button type="button" id="townButton" class="btn btn-lg btn-warning btn-block">OK</button>
               </form>
             </div>
           </div>
@@ -185,7 +188,7 @@ R"rawText(
                     <input type="text" id="key" class="form-control" name="key" placeholder="API Key" required>
                     <div class="valid-feedback">Valide.</div>
                     <div class="invalid-feedback">Veuillez séléctionner une clé valide.</div>
-                    <button type="button" id="keyButton" class="btn btn-lg btn-warning btn-block" onClick="RunAPIButtonWasClicked();">OK</button>
+                    <button type="button" id="keyButton" class="btn btn-lg btn-warning btn-block">OK</button>
                 </form>
             </div>
           </div>
