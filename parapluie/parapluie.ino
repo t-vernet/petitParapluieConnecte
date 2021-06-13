@@ -52,7 +52,7 @@
 #include <WebSocketsServer.h> // https://github.com/Links2004/arduinoWebSockets
 
 /***************************** START-WebServer ********************************
-* Début de la gestion du server web par ESP8266WebServer                     *
+* Début de la gestion du server web par ESP8266WebServer                      *
 ******************************************************************************/
 
 ESP8266WebServer server(80);  //déclaration du serveur web sur le port
@@ -105,33 +105,32 @@ void startWebSocket() { // Start a WebSocket server
 bool status = 1;   // enregistre si le parapluie est ouvert ou fermé.
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) { // When a WebSocket message is received
         switch (type) {
-        case WStype_DISCONNECTED:         // if the websocket is disconnected
+        case WStype_DISCONNECTED:                 // if the websocket is disconnected
                 Serial.printf("[%u] Disconnected!\n", num);
                 break;
-        case WStype_CONNECTED:            // if a new websocket connection is established
-                {
-                        IPAddress ip = webSocket.remoteIP(num);
-                        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-                        StaticJsonDocument<64> doc; // Create JsonDocument of fixed size
-                        JsonObject root = doc.to<JsonObject>();  // create JsonObject from JsonDocument
-                        root["event"] = "state"; // populate JsonObject
-                        root["state"] = status; // populate JsonObject
-                        char buffer[64]; // create temp buffer
-                        serializeJson(root, buffer); // serialize to buffer
-                        webSocket.broadcastTXT(buffer); // send buffer to web socket
-                }
-                break;
-        case WStype_TEXT:                 // if new text data is received
+        case WStype_CONNECTED: {                    // if a new websocket connection is established
+                IPAddress ip = webSocket.remoteIP(num);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+                StaticJsonDocument<64> doc;                 // Create JsonDocument of fixed size
+                JsonObject root = doc.to<JsonObject>();                  // create JsonObject from JsonDocument
+                root["event"] = "state";                 // populate JsonObject
+                root["state"] = status;                 // populate JsonObject
+                char buffer[64];                 // create temp buffer
+                serializeJson(root, buffer);                 // serialize to buffer
+                webSocket.broadcastTXT(buffer);                 // send buffer to web socket
+        }
+        break;
+        case WStype_TEXT:                         // if new text data is received
                 Serial.printf("[%u] get Text: %s\n", num, payload);
                 break;
-        case WStype_ERROR:                // if an erro happen
+        case WStype_ERROR:                        // if an erro happen
                 Serial.printf("[%u] get Error: %s\n", num, payload);
                 break;
-}
+        }
 }
 
 /********************************* START-WiFi *********************************
-* Début de la gestion du wifi par WiFiManager                                *
+* Début de la gestion du wifi par WiFiManager                                 *
 ******************************************************************************/
 
 void connexion() {
@@ -258,16 +257,16 @@ void prendDonneesMeteo() //Fonction qui utilise le client web du D1 mini pour en
 }
 
 /*********************** START-parapluie() variables **************************
-* Début de la définition des variables globales de la fonction parapluie()   *
+* Début de la définition des variables globales de la fonction parapluie()    *
 ******************************************************************************/
 
-int ferme = 90;   // angle pour fermer le parapluie
+int ferme = 0;   // angle pour fermer le parapluie
 int ouvre = 170;  // angle pour ouvrir le parapluie
 
 Servo monservo;    // créer un objet "monservo" pour le contrôler
 
 /************************** START-loop() variables ****************************
-* Debut de la définition des variables globales de la fonction parapluie()   *
+* Debut de la définition des variables globales de la fonction parapluie()    *
 ******************************************************************************/
 // permet de vérifier le temps écoulé
 unsigned long dateDernierChangement = 0;
@@ -275,9 +274,13 @@ unsigned long dateCourante;
 unsigned long intervalle;
 // permet de savoir quel ping envoyer
 bool ping = false;
+/********************************* START-Setup *********************************
+* Code qui doit s'exécuter qu'une fois                                         *
+*******************************************************************************/
 void setup() {
         Serial.begin(9600);
-        Serial.println();
+        delay(100);
+        Serial.println("/r/nStart Setup()");
 
         connexion();
 
@@ -297,13 +300,18 @@ void setup() {
 
         town = identifiantVille;
         key = cledAPI;
+
+        Serial.println("End Setup() && Start Loop()");
 }
 
+/********************************* START-Loop **********************************
+* Code qui doit s'exécuter en continu                                          *
+*******************************************************************************/
 void loop() {
         dateCourante = millis();
         intervalle = dateCourante - dateDernierChangement; // intervalle de temps depuis la dernière mise à jour du parapluie
 
-        if (intervalle >= 600000 || identifiantVille != town || cledAPI != key) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
+        if (intervalle >= (600 * 1000) || identifiantVille != town || cledAPI != key) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
         {
                 identifiantVille = town;
                 cledAPI = key;
