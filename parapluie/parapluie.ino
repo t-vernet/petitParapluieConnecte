@@ -44,19 +44,21 @@
  *
  */
 
-#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 #include <Servo.h>
+#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+#include <WebSocketsServer.h> // https://github.com/Links2004/arduinoWebSockets
 
 /***************************** START-WebServer ********************************
-* Début de la gestion du server web par ESP8266WebServer                     *
+* Début de la gestion du server web par ESP8266WebServer                      *
 ******************************************************************************/
 
 ESP8266WebServer server(80);  //déclaration du serveur web sur le port
 String webSite,xml,data,town,key; //déclaration de variables
-int start = 0; // variable start
+bool testType; // Doit on tester l'ouverture (true) ou la fermeture (false);
+bool test = false;
 
 void buildWebsite(){ // Fonction qui écrit le code html du site web à partir du fichier html.h
         static const char* html =
@@ -64,37 +66,71 @@ void buildWebsite(){ // Fonction qui écrit le code html du site web à partir d
         ;
         webSite = String((const char*) html);
 }
-void buildXML(){
-        xml="<?xml version='1.0'?>";
-        xml+="<response>";
-        xml+=data;
-        xml+="</response>";
-}
 
 void handleWebsite(){ // génère le site web
         buildWebsite(); // écriture du html
         server.send(200,"text/html",webSite); // mise en ligne du site
 }
 
-void handleXML(){ // gère le xml (description de l'état du bouton)
-        buildXML();
-        server.send(200,"text/xml",xml);
-}
-
-void handle1ESPval(){
-        start = server.arg("Start").toFloat();
+void handleTest(){
+        test = true;
+        testType = server.arg("Test").toFloat();
+        server.send(200,"text/plain","200: OK");
 }
 
 void handleTown(){
         town = server.arg("Town");
+        server.send(200,"text/plain","200: OK");
 }
 
 void handleAPIKey(){
         key = server.arg("Key");
+        server.send(200,"text/plain","200: OK");
+}
+
+void handleNotFound(){
+    server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
+}
+/***************************** START-WebSocket ********************************
+* Début de la gestion du server web par ESP8266WebServer                      *
+******************************************************************************/
+WebSocketsServer webSocket(81);    // create a websocket server on port 81
+
+void startWebSocket() { // Start a WebSocket server
+        webSocket.begin();                    // start the websocket server
+        webSocket.onEvent(webSocketEvent);    // if there's an incomming websocket message, go to function 'webSocketEvent'
+        Serial.println("WebSocket server started.");
+}
+
+bool status = 1;   // enregistre si le parapluie est ouvert ou fermé.
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) { // When a WebSocket message is received
+        switch (type) {
+        case WStype_DISCONNECTED:                 // if the websocket is disconnected
+                Serial.printf("[%u] Disconnected!\n", num);
+                break;
+        case WStype_CONNECTED: {                    // if a new websocket connection is established
+                IPAddress ip = webSocket.remoteIP(num);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+                StaticJsonDocument<64> doc;                 // Create JsonDocument of fixed size
+                JsonObject root = doc.to<JsonObject>();                  // create JsonObject from JsonDocument
+                root["event"] = "state";                 // populate JsonObject
+                root["state"] = status;                 // populate JsonObject
+                char buffer[64];                 // create temp buffer
+                serializeJson(root, buffer);                 // serialize to buffer
+                webSocket.broadcastTXT(buffer);                 // send buffer to web socket
+        }
+        break;
+        case WStype_TEXT:                         // if new text data is received
+                Serial.printf("[%u] get Text: %s\n", num, payload);
+                break;
+        case WStype_ERROR:                        // if an erro happen
+                Serial.printf("[%u] get Error: %s\n", num, payload);
+                break;
+        }
 }
 
 /********************************* START-WiFi *********************************
-* Début de la gestion du wifi par WiFiManager                                *
+* Début de la gestion du wifi par WiFiManager                                 *
 ******************************************************************************/
 
 void connexion() {
@@ -221,53 +257,61 @@ void prendDonneesMeteo() //Fonction qui utilise le client web du D1 mini pour en
 }
 
 /*********************** START-parapluie() variables **************************
-* Début de la définition des variables globales de la fonction parapluie()   *
+* Début de la définition des variables globales de la fonction parapluie()    *
 ******************************************************************************/
 
-int ferme = 90;   // angle pour fermer le parapluie
+int ferme = 0;   // angle pour fermer le parapluie
 int ouvre = 170;  // angle pour ouvrir le parapluie
-bool pluie = 1;   // enregistre si il pleut ou pas.
 
 Servo monservo;    // créer un objet "monservo" pour le contrôler
 
 /************************** START-loop() variables ****************************
-* Debut de la définition des variables globales de la fonction parapluie()   *
+* Debut de la définition des variables globales de la fonction parapluie()    *
 ******************************************************************************/
-
-int webClic = 0;  // stock l'état du bouton de test pour vérifier si il à changé
-
 // permet de vérifier le temps écoulé
 unsigned long dateDernierChangement = 0;
 unsigned long dateCourante;
 unsigned long intervalle;
-
+// permet de savoir quel ping envoyer
+bool ping = false;
+/********************************* START-Setup *********************************
+* Code qui doit s'exécuter qu'une fois                                         *
+*******************************************************************************/
 void setup() {
         Serial.begin(9600);
-        Serial.println();
+        delay(100);
+        Serial.println("/r/nStart Setup()");
 
         connexion();
 
         delay(100);
 
         server.on("/",handleWebsite);
-        server.on("/xml",handleXML);
-        server.on("/set1ESPval",handle1ESPval);
+        server.on("/test",handleTest);
         server.on("/town",handleTown);
         server.on("/apikey",handleAPIKey);
+        server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
         server.begin();
+
+        startWebSocket(); // Start a WebSocket server
 
         prendDonneesMeteo();
         parapluie ();
 
         town = identifiantVille;
         key = cledAPI;
+
+        Serial.println("End Setup() && Start Loop()");
 }
 
+/********************************* START-Loop **********************************
+* Code qui doit s'exécuter en continu                                          *
+*******************************************************************************/
 void loop() {
         dateCourante = millis();
         intervalle = dateCourante - dateDernierChangement; // intervalle de temps depuis la dernière mise à jour du parapluie
 
-        if (intervalle >= 600000 || identifiantVille != town || cledAPI != key) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
+        if (intervalle >= (600 * 1000) || identifiantVille != town || cledAPI != key) // Récupère de nouvelles données toutes les 10 minutes ou immediatement si la ville a été changé
         {
                 identifiantVille = town;
                 cledAPI = key;
@@ -276,37 +320,37 @@ void loop() {
                 parapluie(); // met à jour le parapluie
         }
 
-        if (start != webClic) // si l'état du bouton web à changé
+        if (test) // si le boutton test à été cliqué
         {
                 int parastock = para; // stock la valeur "para" dans "parastock"
-                if (!start)
+                if (!testType)
                 {
-                        para = 900; // triche sur la valeur "para" pour un test pluie
+                        para = 900; // triche sur la valeur "para" pour un test status
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie fermé ");
-                        delay (200);
+                        delay (100);
                 }
-                if (start)
+                if (testType)
                 {
-                        para = 100; // triche sur la valeur "para" pour un test pluie
+                        para = 100; // triche sur la valeur "para" pour un test status
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie ouvert ");
-                        delay (200);
+                        delay (100);
                 }
-                webClic = start; // met à jour webClic
                 para = parastock; // redonne à para sa valeur initiale
+                test = false;
         }
 
-        data =(String)start;
+        webSocket.loop();
+
         server.handleClient();
 
-        if ((intervalle%6000) == 0) { // toutes les 6 secondes, j'écris ces infos sur le moniteur série
+        if (intervalle%(60*1000)==0) { // toutes les minutes
+                int i = webSocket.connectedClients(ping);
+                Serial.printf("%d Connected websocket clients ping: %d\n", i, ping);
+                ping = !ping;
                 ecritMeteoGeneral();
-                Serial.print("interval modulo 6000 : "); Serial.println((intervalle%60));
-                Serial.print("interval : "); Serial.println(intervalle);
-                Serial.print("date Courante : "); Serial.println(dateCourante);
-                Serial.print("date du Dernier Changement : "); Serial.println(dateDernierChangement);
-        }
+}
 }
 
 void ecritMeteoGeneral()
@@ -325,23 +369,31 @@ void parapluie ()
 {
 
         if (para<600) {    // Si la valeur de l'indicateur météo est inférieur à 600 c'est qu'il pleut.
-                if (pluie == 0) { // Si avant ça il ne pleuvait pas
+                if (status == 0) { // Si avant ça le parapluie était fermé
                         monservo.attach(0); // brancher le servomoteur sur la broche D3 (GPIO 0)
                         monservo.write(ouvre); // ouvre le parapluie
                         Serial.print("ouvre à : "); Serial.println(ouvre);
-                        pluie = 1; // note qu'il pleut
-                        Serial.print("pluie à : "); Serial.println(pluie);
+                        status = 1; // note que le parapluie est maintenant ouvert
+                        Serial.print("status à : "); Serial.println(status);
                 }
         }
         else {             // si il ne pleut pas
-                if (pluie == 1) { // et que juste avant il pleuvait (le parapluie était donc ouvert).
+                if (status == 1) { // Si avant ça le parapluie était ouvert.
                         monservo.attach(0); // brancher le servomoteur sur la broche D3 (GPIO 0)
                         monservo.write(ferme); // ferme le parapluie
                         Serial.print("ferme à : "); Serial.println(ferme);
-                        pluie = 0; // note bien qu'il ne pleut pas
-                        Serial.print("pluie à : "); Serial.println(pluie);
+                        status = 0; // note que le parapluie est maintenant fermé
+                        Serial.print("status à : "); Serial.println(status);
+
                 }
         }
         delay (200);
         monservo.detach(); // débrancher le servomoteur de la broche D3 (GPIO 0)
+        StaticJsonDocument<64> doc; // Create JsonDocument of fixed size
+        JsonObject root = doc.to<JsonObject>();  // create JsonObject from JsonDocument
+        root["event"] = "state"; // populate JsonObject
+        root["state"] = status; // populate JsonObject
+        char buffer[64]; // create temp buffer
+        serializeJson(root, buffer); // serialize to buffer
+        webSocket.broadcastTXT(buffer); // send buffer to web socket
 }
