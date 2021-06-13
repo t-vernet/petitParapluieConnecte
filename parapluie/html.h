@@ -34,8 +34,8 @@ R"rawText(
     }
 
     function RunTestButtonWasClicked() {
-      click = (state == 1) ? 0 : 1;
-      xmlHttp.open('SET', 'set1ESPval?Start=' + click, true);
+      test = (state == 1) ? 0 : 1;
+      xmlHttp.open('SET', 'test?Test=' + test, true);
       xmlHttp.send(null);
     }
 

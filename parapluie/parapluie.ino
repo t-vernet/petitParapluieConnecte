@@ -57,7 +57,8 @@
 
 ESP8266WebServer server(80);  //déclaration du serveur web sur le port
 String webSite,xml,data,town,key; //déclaration de variables
-int start = 0; // variable start
+bool testType; // Doit on tester l'ouverture (true) ou la fermeture (false);
+bool test = false;
 
 void buildWebsite(){ // Fonction qui écrit le code html du site web à partir du fichier html.h
         static const char* html =
@@ -82,8 +83,9 @@ void handleXML(){ // gère le xml (description de l'état du bouton)
         server.send(200,"text/xml",xml);
 }
 
-void handle1ESPval(){
-        start = server.arg("Start").toFloat();
+void handleTest(){
+        test = true;
+        testType = server.arg("Test").toFloat();
 }
 
 void handleTown(){
@@ -272,9 +274,6 @@ Servo monservo;    // créer un objet "monservo" pour le contrôler
 /************************** START-loop() variables ****************************
 * Debut de la définition des variables globales de la fonction parapluie()   *
 ******************************************************************************/
-
-int webClic = 0;  // stock l'état du bouton de test pour vérifier si il à changé
-
 // permet de vérifier le temps écoulé
 unsigned long dateDernierChangement = 0;
 unsigned long dateCourante;
@@ -291,7 +290,7 @@ void setup() {
 
         server.on("/",handleWebsite);
         server.on("/xml",handleXML);
-        server.on("/set1ESPval",handle1ESPval);
+        server.on("/test",handleTest);
         server.on("/town",handleTown);
         server.on("/apikey",handleAPIKey);
         server.begin();
@@ -318,25 +317,25 @@ void loop() {
                 parapluie(); // met à jour le parapluie
         }
 
-        if (start != webClic) // si l'état du bouton web à changé
+        if (test) // si le boutton test à été cliqué
         {
                 int parastock = para; // stock la valeur "para" dans "parastock"
-                if (!start)
+                if (!testType)
                 {
-                        para = 900; // triche sur la valeur "para" pour un test pluie
+                        para = 900; // triche sur la valeur "para" pour un test status
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie fermé ");
-                        delay (200);
+                        delay (100);
                 }
-                if (start)
+                if (testType)
                 {
-                        para = 100; // triche sur la valeur "para" pour un test pluie
+                        para = 100; // triche sur la valeur "para" pour un test status
                         parapluie(); // met à jour le parapluie
                         Serial.println("parapluie ouvert ");
-                        delay (200);
+                        delay (100);
                 }
-                webClic = start; // met à jour webClic
                 para = parastock; // redonne à para sa valeur initiale
+                test = false;
         }
 
         webSocket.loop();
