@@ -9,6 +9,15 @@ R"rawText(
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
   <script type="text/javascript">
+
+    window.addEventListener('load', init, true);
+    var timeout = 250 ;
+    var state = 2;
+
+    function init() {
+        setTimeout(webSocketConnection, Math.min(10000,timeout+=timeout));
+    }
+
     var xmlHttp = createXmlHttpObject();
 
     function createXmlHttpObject() { // seems to handle web browsers compatibility
@@ -20,42 +29,8 @@ R"rawText(
       return xmlHttp;
     }
 
-    var click;
-    var town;
-
-    function handleServerResponse() {
-      xmlResponse = xmlHttp.responseXML;
-      xmldoc = xmlResponse.getElementsByTagName('response');
-      message = xmldoc[0].firstChild.nodeValue;
-      if (message == 1) {
-        click = 1;
-        message = 'ouvert';
-        document.getElementById("umbrellaState").className = document.getElementById("umbrellaState").className.replace(/(?:^|\s)bg-danger(?!\S)/g, '');
-        document.getElementById("umbrellaState").className += " bg-success";
-      } else {
-        click = 0;
-        message = 'ferm&eacute;';
-        document.getElementById("umbrellaState").className = document.getElementById("umbrellaState").className.replace(/(?:^|\s)bg-success(?!\S)/g, '');
-        document.getElementById("umbrellaState").className += " bg-danger";
-      }
-      document.getElementById('umbrellaState').innerHTML = message;
-    }
-
-    function process() {
-      xmlHttp.open('PUT', 'xml', true);
-      xmlHttp.onreadystatechange = handleServerResponse; // no brackets?????
-      xmlHttp.send(null);
-      setTimeout('process()', 200);
-    }
-
-    // function process2() {
-    // xmlHttp.open('SET', 'set1ESPval?Start=' + click, true);
-    // xmlHttp.send(null);
-    // setTimeout('process2()', 400);
-    // }
-
     function RunTestButtonWasClicked() {
-      click = (click == 1) ? 0 : 1;
+      click = (state == 1) ? 0 : 1;
       xmlHttp.open('SET', 'set1ESPval?Start=' + click, true);
       xmlHttp.send(null);
     }
@@ -71,11 +46,69 @@ R"rawText(
       xmlHttp.open("SET", "apikey?Key=" + key, true);
       xmlHttp.send(null);
     }
+
+    function webSocketConnection() {
+        if (!navigator.onLine) {
+            console.log('You are offline.');
+        } else {
+            console.log('You are online.');
+            console.log('Attempting to reconnect to the server.');
+            var webSocket = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
+            webSocket.onopen = function (e) {
+                webSocket.send('Client connected ' + new Date());
+                timeout = 250;
+            };
+            webSocket.onmessage = function (e) {
+                console.log('Server sent : ', e.data);
+                if (typeof e.data === 'string'){
+                    //create a JSON object
+                    var jsonObject = JSON.parse(e.data);
+                    switch (jsonObject.event) {
+                        case 'state':
+                            console.log('JSON event "state".');
+                            umbrellaStateChange(jsonObject);
+                            break;
+                        default:
+                            console.log('JSON event '+jsonObject.event+' is not defined.');
+                    }
+                }
+            };
+            webSocket.onclose = function (e) {
+                console.log('' + e.data);
+                if (e.code != 1000) {
+                    setTimeout(webSocketConnection, Math.min(10000,timeout+=timeout));
+                }
+            };
+            webSocket.onerror = function (error) {
+                console.log('WebSocket Error ', error);
+            };
+    }
+    }
+
+    function umbrellaStateChange(jsonObject) {
+        var oldState = state;
+        state = jsonObject.state;
+        if (oldState != state){
+            if (state == '1') {
+                message = 'ouvert';
+                document.getElementById('umbrellaState').className = document.getElementById('umbrellaState').className.replace(/(?:^|\s)bg-danger(?!\S)/g, '');
+                document.getElementById('umbrellaState').className += ' bg-success';
+            }
+            if (state == '0') {
+                message = 'ferm&eacute;';
+                document.getElementById('umbrellaState').className = document.getElementById('umbrellaState').className.replace(/(?:^|\s)bg-success(?!\S)/g, '');
+                document.getElementById('umbrellaState').className += ' bg-danger';
+            }
+            document.getElementById('umbrellaState').innerHTML = message;
+        }
+    }
+
   </script>
   <title>POCL-Parapluie</title>
 </head>
 
-<body bgcolor='#E6E6FA' onload='process()'>
+<!-- <body bgcolor='#E6E6FA' onload='process()'> -->
+<body bgcolor='#E6E6FA'>
   <header id="main-header" class="py-2 bg-success text-white">
     <div class="container">
       <div class="row justify-content-md-center">
